@@ -32,6 +32,9 @@ var Config struct {
 	WebServer struct {
 		Address string
 	}
+	Auth struct {
+		NamesPasswords map[string]string
+	}
 }
 
 func init() {

@@ -267,6 +267,8 @@ func createMatch(trainingRun *db.TrainingRun, targetSlice int, network *db.Netwo
 }
 
 func uploadNetwork(c *gin.Context) {
+	c.MustGet(gin.AuthUserKey)
+	
 	file, err := c.FormFile("file")
 	if err != nil {
 		log.Println(err.Error())
@@ -1769,8 +1771,17 @@ func createTemplates() multitemplate.Render {
 	return r
 }
 
+func getAccounts() gin.Accounts {
+	acc := gin.Accounts{}
+	for k, v := range config.Config.Auth.NamesPasswords {
+		acc[k] = v
+	}
+	return acc
+}
+
 func setupRouter() *gin.Engine {
 	router := gin.Default()
+
 	router.HTMLRender = createTemplates()
 	router.MaxMultipartMemory = 32 << 20 // 32 MiB
 	router.Static("/css", "./public/css")
@@ -1797,8 +1808,11 @@ func setupRouter() *gin.Engine {
 	router.GET("/game_moved", func(c *gin.Context) { c.HTML(http.StatusOK, "game_moved", nil) })
 	router.POST("/next_game", nextGame)
 	router.POST("/upload_game", uploadGame)
-	router.POST("/upload_network", uploadNetwork)
 	router.POST("/match_result", matchResult)
+
+	authorized := router.Group("/admin", gin.BasicAuth(getAccounts()))
+	authorized.POST("/upload_network", uploadNetwork)
+
 	return router
 }
 
